@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
+	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd
+        http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
+
+	<changeSet id="db.function" author="son.truong">
+    	<preConditions onFail="MARK_RAN">
+    		<not>
+    			<tableExists tableName="function"/>
+    		</not>
+    	</preConditions>
+    	<comment>Initiate function tables</comment>
+    	<sql>
+    		CREATE TABLE one_function (
+			  id bigint(20) NOT NULL,
+			  name varchar(255) NOT NULL,
+			  function_key varchar(50) NOT NULL,
+			  api varchar(255) DEFAULT NULL,
+			  api_method varchar(20) DEFAULT NULL,
+			  allow_all bit(1) DEFAULT NULL,
+			  PRIMARY KEY (id),
+			  UNIQUE KEY name (name),
+			  UNIQUE KEY function_key (function_key)
+			);
+			CREATE TABLE function_role (
+			  function_id bigint(20) NOT NULL,
+			  role varchar(20) DEFAULT NULL,
+			  KEY function_id (function_id)
+			);
+			CREATE TABLE function_user (
+			  user_id bigint(20) NOT NULL,
+			  function_id bigint(20) NOT NULL,
+			  KEY authority_id (function_id),
+			  KEY user_id (user_id)
+			);
+			
+    	</sql>
+    </changeSet>
+	
+	<changeSet id="db.authorization.1" author="son.truong">
+		<addAutoIncrement tableName="one_function" columnName="id" columnDataType="bigint(20)"/>
+	</changeSet>
+	<changeSet id="db.authorization.2" author="son.truong">
+		<preConditions onFail="MARK_RAN">
+			<not>
+				<columnExists tableName="one_function" columnName="on_org"/>
+			</not>
+		</preConditions>
+		<addColumn tableName="function">
+			<column name="on_org" type="boolean"></column>
+			<column name="on_obj" type="boolean"></column>
+		</addColumn>
+	</changeSet>
+	<changeSet id="db.authorization.3" author="son.truong">
+		<modifyDataType tableName="one_function" columnName="function_key" newDataType="varchar(100)"/>
+		<dropNotNullConstraint tableName="one_function" columnName="function_key" columnDataType="varchar(50)"/>
+	</changeSet>
+	<changeSet id="db.authorization.4" author="son.truong">
+		<preConditions onFail="MARK_RAN">
+			<not>
+				<columnExists tableName="one_function" columnName="icon"/>
+			</not>
+		</preConditions>
+		<addColumn tableName="one_function">
+			<column name="icon" type="varchar(255)"></column>
+		</addColumn>
+	</changeSet>
+	<changeSet id="db.authorization.5" author="son.truong">
+		<preConditions onFail="MARK_RAN">
+			<not>
+				<columnExists tableName="function" columnName="parent"/>
+			</not>
+		</preConditions>
+		<addColumn tableName="one_function">
+			<column name="parent" type="bigint(20)"></column>
+		</addColumn>
+	</changeSet>
+	<changeSet id="data.function.OneManagement" author="ones">
+    	<comment>add data for management</comment>
+    	<insert tableName="one_function">
+    		<column name="name">OnesManagement</column>
+            <column name="api_method">menu</column>
+            <column name="function_key"></column>
+            <column name="api">management</column>
+            <column name="allow_all" valueBoolean="false"></column>
+            <column name="on_org" valueBoolean="false"></column>
+            <column name="on_obj" valueBoolean="false"></column>
+    	</insert>
+    	<sql>
+    		SET @functionId = 0;
+			SET @functionId = (select t.id from one_function t where t.name = 'OnesManagement' and t.method = 'menu');
+    		update one_function set parent = @functionId where name = 'List Function' and method = 'menu';
+    	</sql>
+    </changeSet>
+	<changeSet id="data.function.OneManagement.01" author="ones">
+    	<comment>add data for management</comment>
+    	<sql>
+    		update one_function set function_key = 'Ones management' where name = 'OnesManagement' and method = 'menu';
+    	</sql>
+    </changeSet>
+</databaseChangeLog>
